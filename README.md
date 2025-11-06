@@ -65,3 +65,7 @@ Copyright © Akkariiin 2019. Forked from ShadowsocksR by BreakWa11
 [Appveyor]:       https://ci.appveyor.com/project/Akkariiin/shadowsocksr-csharp
 [Build Status]:   https://ci.appveyor.com/api/projects/status/ey901turnakim5nv/branch/master?svg=true
 [latest release]: https://github.com/shadowsocksrr/shadowsocksr-csharp/releases
+
+### 项目分析文档（中文）
+
+为便于非技术读者快速了解本项目的功能与架构，可查看仓库根目录中的 `ANALYSIS.zh-CN.md`。
