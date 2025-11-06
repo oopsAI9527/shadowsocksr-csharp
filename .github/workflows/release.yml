@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,8 +19,15 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      # Visual Studio Build Tools on windows-latest already include .NET Framework targeting packs.
-      # 移除动态安装 4.0 运行时，避免在托管 runner 上失败或无效。
+      - name: Install .NET Framework 4.0 Developer Pack
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          choco install netfx-4.0-devpack -y --no-progress
+          $ref = 'C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0\mscorlib.dll'
+          if (-not (Test-Path $ref)) {
+            Write-Error "Targeting Pack not found at: $ref"
+          }
 
       - name: Restore packages
         run: nuget restore shadowsocks-csharp.sln
@@ -29,10 +36,7 @@ jobs:
         run: msbuild shadowsocks-csharp/shadowsocks-csharp.csproj /p:Configuration=Release /p:Platform=AnyCPU /m
 
       - name: Build .NET 4.0 client
-        shell: pwsh
-        run: |
-          $env:FrameworkPathOverride = 'C:\Windows\Microsoft.NET\Framework\v4.0.30319'
-          msbuild shadowsocks-csharp/shadowsocks-csharp4.0.csproj /p:Configuration=Release /p:Platform=AnyCPU /m
+        run: msbuild shadowsocks-csharp/shadowsocks-csharp4.0.csproj /p:Configuration=Release /p:Platform=AnyCPU /m
 
       - name: Package artifacts
         shell: pwsh
@@ -66,7 +70,7 @@ jobs:
 
   release:
     needs: build
-    runs-on: windows-2019
+    runs-on: windows-2022
     if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
