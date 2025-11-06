@@ -79,7 +79,9 @@ Copyright © Akkariiin 2019. Forked from ShadowsocksR by BreakWa11
 - 构建产物：
   - `artifacts/ShadowsocksR-dotnet2.0-{version}.zip`
   - `artifacts/ShadowsocksR-dotnet4.0-{version}.zip`
+  - `artifacts/ShadowsocksR-win-{version}.zip`（发行版目录，包含两个 exe 与必要模板/规则文件）
 - 发布流程：工作流会在构建完成后自动创建 GitHub Release，并将上述 ZIP 作为附件上传。
+  - 手动触发时：如果不是通过标签触发，工作流会自动生成 `nightly-YYYYMMDD-HHMMSS` 标签并以此创建预发布（Pre-release），你可在 Releases 页面看到下载文件。
 - 常见问题与解决：
   - MSB3644（缺少 .NETFramework,Version=v4.0 的参考程序集）：
     - 解决方案一：在工作流中使用 NuGet 包 `Microsoft.NETFramework.ReferenceAssemblies.net40` 并通过 `FrameworkPathOverride` 指向本地参考程序集；
@@ -91,3 +93,14 @@ Copyright © Akkariiin 2019. Forked from ShadowsocksR by BreakWa11
 - 本地触发示例：
   - `git tag v2025.11.06 && git push origin v2025.11.06`
   - 或在 GitHub Actions 界面手动 Dispatch（手动触发）。
+
+#### 发行版内容说明
+
+- `ShadowsocksR-win-{version}.zip` 内包含：
+  - `ShadowsocksR-dotnet2.0.exe` 与 `ShadowsocksR-dotnet4.0.exe`
+  - 根目录：`LICENSE`、`chn_ip.txt`、`user.rule`
+  - `templates/`：`privoxy_conf.txt`、`proxy.pac.txt.gz`、`cn.txt`、`zh-tw.txt`
+
+若你只看到一个 exe：
+- 可能是某一目标（2.0 或 4.0）未成功生成；在 Actions 日志中搜索 `Skip missing output folder:` 以定位缺失的输出目录。
+- 也可能是仅下载了某个单独目标的 ZIP。请选择 `ShadowsocksR-win-{version}.zip`（完整发行版）。

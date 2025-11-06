@@ -88,6 +88,43 @@ jobs:
             }
           }
 
+      - name: Package Windows distribution folder (extras + dual exe)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = "${{ github.ref_name }}"
+          if (-not $version) { $version = (Get-Date -Format 'yyyyMMdd-HHmmss') }
+          $projectRoot = Join-Path (Get-Location) 'shadowsocks-csharp'
+          $distRoot = Join-Path (Get-Location) ("dist/ShadowsocksR-win-{0}" -f $version)
+          New-Item -ItemType Directory -Path $distRoot -Force | Out-Null
+          $templates = Join-Path $distRoot 'templates'
+          New-Item -ItemType Directory -Path $templates -Force | Out-Null
+
+          # Copy executables if present and rename to match historical naming
+          $exe20 = Join-Path $projectRoot 'bin/2.0/Release/ShadowsocksR.exe'
+          if (Test-Path $exe20) { Copy-Item $exe20 (Join-Path $distRoot 'ShadowsocksR-dotnet2.0.exe') -Force }
+          $exe40 = Join-Path $projectRoot 'bin/4.0/Release/ShadowsocksR.exe'
+          if (Test-Path $exe40) { Copy-Item $exe40 (Join-Path $distRoot 'ShadowsocksR-dotnet4.0.exe') -Force }
+
+          # Root extras
+          foreach ($f in @('LICENSE','chn_ip.txt')) {
+            $src = Join-Path (Get-Location) $f
+            if (Test-Path $src) { Copy-Item $src (Join-Path $distRoot (Split-Path $src -Leaf)) -Force }
+          }
+          $userRule = Join-Path $projectRoot 'Data/user-rule.txt'
+          if (Test-Path $userRule) { Copy-Item $userRule (Join-Path $distRoot 'user.rule') -Force }
+
+          # Template files
+          foreach ($f in @('privoxy_conf.txt','proxy.pac.txt.gz','cn.txt','zh-tw.txt')) {
+            $src = Join-Path $projectRoot ("Data/{0}" -f $f)
+            if (Test-Path $src) { Copy-Item $src (Join-Path $templates (Split-Path $src -Leaf)) -Force }
+          }
+
+          # Zip distribution folder
+          New-Item -ItemType Directory -Path 'artifacts' -Force | Out-Null
+          $zipPath = Join-Path 'artifacts' ("ShadowsocksR-win-{0}.zip" -f $version)
+          Compress-Archive -Path (Join-Path $distRoot '*') -DestinationPath $zipPath -Force
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -97,10 +134,20 @@ jobs:
   release:
     needs: build
     runs-on: windows-2022
-    if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
     steps:
+      - name: Compute release tag
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ('${{ startsWith(github.ref, 'refs/tags/') }}' -eq 'true') {
+            $tag = '${{ github.ref_name }}'
+          } else {
+            $tag = 'nightly-' + (Get-Date -Format 'yyyyMMdd-HHmmss')
+          }
+          "REL_TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       - name: Download packaged artifacts
         uses: actions/download-artifact@v4
         with:
@@ -111,5 +158,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: "*.zip"
+          tag_name: ${{ env.REL_TAG }}
+          prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          name: SSR Windows ${{ env.REL_TAG }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
