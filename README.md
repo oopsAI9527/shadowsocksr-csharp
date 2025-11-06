@@ -82,7 +82,7 @@ Copyright © Akkariiin 2019. Forked from ShadowsocksR by BreakWa11
 - 发布流程：工作流会在构建完成后自动创建 GitHub Release，并将上述 ZIP 作为附件上传。
 - 常见问题与解决：
   - MSB3644（缺少 .NETFramework,Version=v4.0 的参考程序集）：
-    - 解决方案一：在工作流中安装 .NET Framework 4.0 Developer Pack（Targeting Pack，已内置安装步骤）；
+    - 解决方案一：在工作流中使用 NuGet 包 `Microsoft.NETFramework.ReferenceAssemblies.net40` 并通过 `FrameworkPathOverride` 指向本地参考程序集；
     - 解决方案二：若遇 runner 暂时不可用，可切换到 `windows-2025`。
 - 本地触发示例：
   - `git tag v2025.11.06 && git push origin v2025.11.06`

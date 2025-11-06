@@ -19,15 +19,18 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Install .NET Framework 4.0 Developer Pack
+      - name: Prepare .NET 4.0 reference assemblies via NuGet
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          choco install netfx-4.0-devpack -y --no-progress
-          $ref = 'C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0\mscorlib.dll'
-          if (-not (Test-Path $ref)) {
-            Write-Error "Targeting Pack not found at: $ref"
-          }
+          $out = '_ref'
+          New-Item -ItemType Directory -Path $out -Force | Out-Null
+          nuget install Microsoft.NETFramework.ReferenceAssemblies.net40 -Version 1.0.3 -OutputDirectory $out -ExcludeVersion
+          $pkg = Join-Path $out 'Microsoft.NETFramework.ReferenceAssemblies.net40'
+          $ref40 = Join-Path $pkg 'build\.NETFramework\v4.0'
+          if (-not (Test-Path $ref40)) { throw "net40 reference assemblies not found: $ref40" }
+          # Export for subsequent steps
+          "REF40=$ref40" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Restore packages
         run: nuget restore shadowsocks-csharp.sln
@@ -36,7 +39,12 @@ jobs:
         run: msbuild shadowsocks-csharp/shadowsocks-csharp.csproj /p:Configuration=Release /p:Platform=AnyCPU /m
 
       - name: Build .NET 4.0 client
-        run: msbuild shadowsocks-csharp/shadowsocks-csharp4.0.csproj /p:Configuration=Release /p:Platform=AnyCPU /m
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not $env:REF40) { throw "Missing REF40 environment variable" }
+          $env:FrameworkPathOverride = $env:REF40
+          msbuild shadowsocks-csharp/shadowsocks-csharp4.0.csproj /p:Configuration=Release /p:Platform=AnyCPU /m
 
       - name: Package artifacts
         shell: pwsh
