@@ -69,3 +69,21 @@ Copyright © Akkariiin 2019. Forked from ShadowsocksR by BreakWa11
 ### 项目分析文档（中文）
 
 为便于非技术读者快速了解本项目的功能与架构，可查看仓库根目录中的 `ANALYSIS.zh-CN.md`。
+
+### CI 构建与发布（GitHub Actions）
+
+以下为使用 GitHub Actions 自动打包并发布 Release 的简要指南：
+
+- 触发条件：推送以 `v` 开头的标签（例如：`v2025.11.06`）。
+- 运行环境：使用 `windows-2019` 运行器以确保 .NET Framework 4.0 参考程序集可用。
+- 构建产物：
+  - `artifacts/ShadowsocksR-dotnet2.0-{version}.zip`
+  - `artifacts/ShadowsocksR-dotnet4.0-{version}.zip`
+- 发布流程：工作流会在构建完成后自动创建 GitHub Release，并将上述 ZIP 作为附件上传。
+- 常见问题与解决：
+  - MSB3644（缺少 .NETFramework,Version=v4.0 的参考程序集）：
+    - 解决方案一：使用 `windows-2019` 运行器；
+    - 解决方案二：安装 .NET Framework 4.0 Developer Pack（Targeting Pack）。
+- 本地触发示例：
+  - `git tag v2025.11.06 && git push origin v2025.11.06`
+  - 或在 GitHub Actions 界面手动 Dispatch（手动触发）。
