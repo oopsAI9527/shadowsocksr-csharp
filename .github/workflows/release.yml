@@ -25,8 +25,14 @@ jobs:
       - name: Restore packages
         run: nuget restore shadowsocks-csharp.sln
 
-      - name: Build Release binaries
-        run: msbuild shadowsocks-csharp.sln /p:Configuration=Release /p:Platform=AnyCPU /m
+      - name: Build .NET 2.0 client
+        run: msbuild shadowsocks-csharp/shadowsocks-csharp.csproj /p:Configuration=Release /p:Platform=AnyCPU /m
+
+      - name: Build .NET 4.0 client
+        shell: pwsh
+        run: |
+          $env:FrameworkPathOverride = 'C:\Windows\Microsoft.NET\Framework\v4.0.30319'
+          msbuild shadowsocks-csharp/shadowsocks-csharp4.0.csproj /p:Configuration=Release /p:Platform=AnyCPU /m
 
       - name: Package artifacts
         shell: pwsh
