@@ -23,16 +23,17 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $urls = @(
-            'https://download.microsoft.com/download/9/5/A/95A5F0C8-D3B2-4B61-82AD-4E36F0E6DAC4/dotnetfx40_Full_x86_x64.exe'
-          )
-          foreach ($url in $urls) {
-            $file = Join-Path $env:RUNNER_TEMP ([System.IO.Path]::GetFileName($url))
-            Write-Host "Downloading $url"
-            Invoke-WebRequest -Uri $url -OutFile $file
-            Write-Host "Installing $file"
-            Start-Process -FilePath $file -ArgumentList '/passive /norestart' -Wait
+          $downloadPage = Invoke-WebRequest -Uri 'https://dotnet.microsoft.com/download/dotnet-framework/thank-you/net40-offline-installer'
+          $match = ($downloadPage.Content | Select-String -Pattern 'https://download\.microsoft\.com/[^\"]+\.exe' -AllMatches).Matches
+          if (-not $match -or $match.Count -eq 0) {
+            throw "Failed to locate .NET Framework 4.0 installer link."
           }
+          $url = $match[0].Value
+          $file = Join-Path $env:RUNNER_TEMP ([System.IO.Path]::GetFileName($url))
+          Write-Host "Downloading $url"
+          Invoke-WebRequest -Uri $url -OutFile $file
+          Write-Host "Installing $file"
+          Start-Process -FilePath $file -ArgumentList '/passive /norestart' -Wait
 
       - name: Restore packages
         run: nuget restore shadowsocks-csharp.sln
