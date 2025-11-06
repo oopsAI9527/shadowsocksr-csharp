@@ -30,13 +30,31 @@ jobs:
           $ref40 = Join-Path $pkg 'build\.NETFramework\v4.0'
           if (-not (Test-Path $ref40)) { throw "net40 reference assemblies not found: $ref40" }
           # Export for subsequent steps
-          "REF40=$ref40" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $ref40Abs = (Resolve-Path -Path $ref40).Path
+          "REF40=$ref40Abs" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Prepare .NET 2.0 reference assemblies via NuGet
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = '_ref'
+          nuget install Microsoft.NETFramework.ReferenceAssemblies.net20 -Version 1.0.3 -OutputDirectory $out -ExcludeVersion
+          $pkg = Join-Path $out 'Microsoft.NETFramework.ReferenceAssemblies.net20'
+          $ref20 = Join-Path $pkg 'build\.NETFramework\v2.0'
+          if (-not (Test-Path $ref20)) { throw "net20 reference assemblies not found: $ref20" }
+          $ref20Abs = (Resolve-Path -Path $ref20).Path
+          "REF20=$ref20Abs" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Restore packages
         run: nuget restore shadowsocks-csharp.sln
 
       - name: Build .NET 2.0 client
-        run: msbuild shadowsocks-csharp/shadowsocks-csharp.csproj /p:Configuration=Release /p:Platform=AnyCPU /m
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not $env:REF20) { throw "Missing REF20 environment variable" }
+          $env:FrameworkPathOverride = $env:REF20
+          msbuild shadowsocks-csharp/shadowsocks-csharp.csproj /p:Configuration=Release /p:Platform=AnyCPU /m
 
       - name: Build .NET 4.0 client
         shell: pwsh

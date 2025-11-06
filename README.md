@@ -84,6 +84,10 @@ Copyright © Akkariiin 2019. Forked from ShadowsocksR by BreakWa11
   - MSB3644（缺少 .NETFramework,Version=v4.0 的参考程序集）：
     - 解决方案一：在工作流中使用 NuGet 包 `Microsoft.NETFramework.ReferenceAssemblies.net40` 并通过 `FrameworkPathOverride` 指向本地参考程序集；
     - 解决方案二：若遇 runner 暂时不可用，可切换到 `windows-2025`。
+  - MSB3644（缺少 .NETFramework,Version=v2.0 的参考程序集）：
+    - 方案：在工作流中使用 NuGet 包 `Microsoft.NETFramework.ReferenceAssemblies.net20` 并通过 `FrameworkPathOverride` 指向本地参考程序集；
+  - NETSDK1052（FrameworkList 路径不是绝对路径）：
+    - 方案：确保 `FrameworkPathOverride` 设置为“绝对路径”（工作流已通过 `Resolve-Path` 修正）。
 - 本地触发示例：
   - `git tag v2025.11.06 && git push origin v2025.11.06`
   - 或在 GitHub Actions 界面手动 Dispatch（手动触发）。
