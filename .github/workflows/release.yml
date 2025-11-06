@@ -16,6 +16,9 @@ jobs:
       - name: Setup NuGet
         uses: nuget/setup-nuget@v1
 
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
       - name: Restore packages
         run: nuget restore shadowsocks-csharp.sln
 
