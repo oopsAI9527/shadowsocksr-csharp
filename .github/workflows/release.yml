@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,27 +19,14 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Install .NET Framework 4.0 targeting pack
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $downloadPage = Invoke-WebRequest -Uri 'https://dotnet.microsoft.com/download/dotnet-framework/thank-you/net40-offline-installer'
-          $match = ($downloadPage.Content | Select-String -Pattern 'https://download\.microsoft\.com/[^\"]+\.exe' -AllMatches).Matches
-          if (-not $match -or $match.Count -eq 0) {
-            throw "Failed to locate .NET Framework 4.0 installer link."
-          }
-          $url = $match[0].Value
-          $file = Join-Path $env:RUNNER_TEMP ([System.IO.Path]::GetFileName($url))
-          Write-Host "Downloading $url"
-          Invoke-WebRequest -Uri $url -OutFile $file
-          Write-Host "Installing $file"
-          Start-Process -FilePath $file -ArgumentList '/passive /norestart' -Wait
+      # Visual Studio Build Tools on windows-latest already include .NET Framework targeting packs.
+      # 移除动态安装 4.0 运行时，避免在托管 runner 上失败或无效。
 
       - name: Restore packages
         run: nuget restore shadowsocks-csharp.sln
 
       - name: Build Release binaries
-        run: msbuild shadowsocks-csharp.sln /p:Configuration=Release /p:Platform="Any CPU" /m
+        run: msbuild shadowsocks-csharp.sln /p:Configuration=Release /p:Platform=AnyCPU /m
 
       - name: Package artifacts
         shell: pwsh
@@ -73,13 +60,16 @@ jobs:
 
   release:
     needs: build
-    runs-on: windows-latest
+    runs-on: windows-2019
     if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
     steps:
       - name: Download packaged artifacts
         uses: actions/download-artifact@v4
         with:
           name: ssr-windows
+          path: .
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v1
